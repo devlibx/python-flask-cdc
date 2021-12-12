@@ -9,18 +9,31 @@ from __future__ import print_function, unicode_literals
 
 import logging
 import time
+import os
+import ast
 
 # Required to be loaded early to avoid hitting deadlock situation when processing requests
 # See http://code.google.com/p/modwsgi/wiki/ApplicationIssues (at the bottom, under Non Blocking Module Imports)
 import _strptime
 
 import itertools
+from kafka import KafkaProducer
+import json
 
 try:
     from StringIO import StringIO  ## for Python 2
 except ImportError:
     from io import StringIO  ## for Python 3
     from io import BytesIO
+
+print("CDC config CDC_KAFKA=", os.getenv('CDC_KAFKA'))
+print("CDC config CDC_TOPIC=", os.getenv('CDC_TOPIC'))
+print("CDC config CDC_DEBUG=", os.getenv('CDC_DEBUG'))
+
+# Set kafka producer if CDC_KAFKA is defined
+if os.getenv('CDC_KAFKA') is not None:
+    producer = KafkaProducer(bootstrap_servers=os.getenv('CDC_KAFKA'),
+                             value_serializer=lambda v: json.dumps(v).encode('utf-8'))
 
 
 class RequestResponseState(object):
@@ -130,6 +143,34 @@ def is_binary_content_type(content_type):
             'atom+xml', 'ecmascript', 'json', 'javascript', 'rss+xml', 'soap+xml', 'xhtml+xml')
     else:
         return True
+
+
+def publish_result_to_kafka(state):
+    if os.getenv('CDC_KAFKA') is None or os.getenv('CDC_TOPIC') is None:
+        print("ignore CDC event, CDC_KAFKA or CDC_TOPIC is not define")
+    else:
+        # Dump logs if debug is on
+        if os.getenv('CDC_DEBUG') is not None:
+            print("(CDC) Request/Response:", state.request_body, '{0} {1}'.format(state.method, state.url),
+                  state.status)
+
+        # Convert to string if required
+        req_body = state.request_body
+        if isinstance(req_body, (bytes, bytearray)):
+            req_body = json.loads(req_body.decode('utf-8'))
+
+        # Send it over kafka
+        f = producer.send(os.getenv('CDC_TOPIC'), {
+            "request": {
+                "body": req_body,
+                "method": state.method,
+                "url": state.url
+            },
+            "response": {
+                "status": state.status
+            }
+        })
+        f.get(timeout=60)
 
 
 def log_results(state):
