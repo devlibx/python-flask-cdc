@@ -1,4 +1,4 @@
-name: business-rules
+name: flask-cdc
 
 on:
   push:
