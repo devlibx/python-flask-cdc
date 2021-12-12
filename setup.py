@@ -9,7 +9,7 @@ description = 'Python DSL for setting up Flask app CDC'
 
 setuptools.setup(
     name='flask-cdc-devlibx',
-    version="0.0.3",
+    version="0.0.4",
     description='{0}\n\n{1}'.format(description, history),
     author='devlibx',
     author_email='devlibxgithub@gmail.com',
