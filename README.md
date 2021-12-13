@@ -13,7 +13,7 @@ from flask_cdc import cdc
 app = "Existing flask"
 
 
-# Recorder is called everytim you get request response. You can do anything you want
+# Recorder is called everytime you get request response. You can do anything you want
 # In this example we have logged data with a helper function provided by cdc. You can change
 # this method to do anything else
 def recorder(state):
