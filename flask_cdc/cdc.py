@@ -19,6 +19,7 @@ import _strptime
 import itertools
 from kafka import KafkaProducer
 import json
+_logger = logging.getLogger(__name__)
 
 try:
     from StringIO import StringIO  ## for Python 2
@@ -26,15 +27,15 @@ except ImportError:
     from io import StringIO  ## for Python 3
     from io import BytesIO
 
-print("CDC config CDC_KAFKA=", os.getenv('CDC_KAFKA'))
-print("CDC config CDC_TOPIC=", os.getenv('CDC_TOPIC'))
-print("CDC config CDC_DEBUG=", os.getenv('CDC_DEBUG'))
-print("CDC config CDC_DISABLED=", os.getenv('CDC_DISABLED'))
+_logger.info("CDC config CDC_KAFKA=", os.getenv('CDC_KAFKA'))
+_logger.info("CDC config CDC_TOPIC=", os.getenv('CDC_TOPIC'))
+_logger.info("CDC config CDC_DEBUG=", os.getenv('CDC_DEBUG'))
+_logger.info("CDC config CDC_DISABLED=", os.getenv('CDC_DISABLED'))
 
 # Set kafka producer if CDC_KAFKA is defined
 if os.getenv('CDC_KAFKA') is not None:
     if os.getenv('CDC_DISABLED') is True:
-        print("CDC_DISABLED is set to true. Ignore producer")
+        _logger.warning("CDC_DISABLED is set to true. Ignore producer")
     else:
         producer = KafkaProducer(bootstrap_servers=os.getenv('CDC_KAFKA'),
                                  value_serializer=lambda v: json.dumps(v).encode('utf-8'))
@@ -151,15 +152,15 @@ def is_binary_content_type(content_type):
 
 def publish_result_to_kafka(state):
     if os.getenv('CDC_DISABLED') is True:
-        print("ignore CDC event, CDC_DISABLED is disabled")
+        _logger.warning("ignore CDC event, CDC_DISABLED is disabled")
         return
 
     if os.getenv('CDC_KAFKA') is None or os.getenv('CDC_TOPIC') is None:
-        print("ignore CDC event, CDC_KAFKA or CDC_TOPIC is not define")
+        _logger.warning("ignore CDC event, CDC_KAFKA or CDC_TOPIC is not define")
     else:
         # Dump logs if debug is on
         if os.getenv('CDC_DEBUG') is not None:
-            print("(CDC) Request/Response:", state.request_body, '{0} {1}'.format(state.method, state.url),
+            _logger.debug("(CDC) Request/Response:", state.request_body, '{0} {1}'.format(state.method, state.url),
                   state.status)
 
         # Convert to string if required
@@ -181,13 +182,13 @@ def publish_result_to_kafka(state):
             })
             f.get(timeout=2)
         except Exception as e:
-            print("Error in sending CDC event", e)
+            _logger.error("Error in sending CDC event", e)
             pass
 
 
 def log_results(state):
-    print("(v1) Request Body", state.request_body, '{0} {1}'.format(state.method, state.url))
-    print("(v1) Response Statue", state.status)
+    _logger.debug("(v1) Request Body", state.request_body, '{0} {1}'.format(state.method, state.url))
+    _logger.debug("(v1) Response Statue", state.status)
 
 
 def log_results_1(state):
