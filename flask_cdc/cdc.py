@@ -168,17 +168,21 @@ def publish_result_to_kafka(state):
             req_body = json.loads(req_body.decode('utf-8'))
 
         # Send it over kafka
-        f = producer.send(os.getenv('CDC_TOPIC'), {
-            "request": {
-                "body": req_body,
-                "method": state.method,
-                "url": state.url
-            },
-            "response": {
-                "status": state.status
-            }
-        })
-        f.get(timeout=60)
+        try:
+            f = producer.send(os.getenv('CDC_TOPIC'), {
+                "request": {
+                    "body": req_body,
+                    "method": state.method,
+                    "url": state.url
+                },
+                "response": {
+                    "status": state.status
+                }
+            })
+            f.get(timeout=60)
+        except Exception as e:
+            print("Error in sending CDC event", err)
+            pass
 
 
 def log_results(state):
