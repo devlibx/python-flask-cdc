@@ -179,9 +179,9 @@ def publish_result_to_kafka(state):
                     "status": state.status
                 }
             })
-            f.get(timeout=60)
+            f.get(timeout=2)
         except Exception as e:
-            print("Error in sending CDC event", err)
+            print("Error in sending CDC event", e)
             pass
 
 
