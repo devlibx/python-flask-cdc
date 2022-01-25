@@ -29,11 +29,15 @@ except ImportError:
 print("CDC config CDC_KAFKA=", os.getenv('CDC_KAFKA'))
 print("CDC config CDC_TOPIC=", os.getenv('CDC_TOPIC'))
 print("CDC config CDC_DEBUG=", os.getenv('CDC_DEBUG'))
+print("CDC config CDC_DISABLED=", os.getenv('CDC_DISABLED'))
 
 # Set kafka producer if CDC_KAFKA is defined
 if os.getenv('CDC_KAFKA') is not None:
-    producer = KafkaProducer(bootstrap_servers=os.getenv('CDC_KAFKA'),
-                             value_serializer=lambda v: json.dumps(v).encode('utf-8'))
+    if os.getenv('CDC_DISABLED') is True:
+        print("CDC_DISABLED is set to true. Ignore producer")
+    else:
+        producer = KafkaProducer(bootstrap_servers=os.getenv('CDC_KAFKA'),
+                                 value_serializer=lambda v: json.dumps(v).encode('utf-8'))
 
 
 class RequestResponseState(object):
@@ -146,6 +150,10 @@ def is_binary_content_type(content_type):
 
 
 def publish_result_to_kafka(state):
+    if os.getenv('CDC_DISABLED') is True:
+        print("ignore CDC event, CDC_DISABLED is disabled")
+        return
+
     if os.getenv('CDC_KAFKA') is None or os.getenv('CDC_TOPIC') is None:
         print("ignore CDC event, CDC_KAFKA or CDC_TOPIC is not define")
     else:
