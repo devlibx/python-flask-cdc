@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-WSGI middleware to record requests and responses.
+WSGI middleware to record requests and responses .
 """
 
 from __future__ import print_function, unicode_literals
